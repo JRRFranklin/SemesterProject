@@ -1,0 +1,420 @@
+
+<?php
+session_start();
+require_once "db_stuff.php";
+
+// Define variables and initialize with empty values
+$f_name = $l_name = $username = $email = $password = $confirm_password = "";
+$username_err = $password_err = $confirm_password_err = $email_err = "";
+
+// Processing form data when form is submitted
+if($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    //Validations
+    //Username
+    if (empty(trim($_POST["username"]))) {
+        $username_err = "Please enter a username.";
+    } else {
+        // Prepare a select statement
+        $sql = "SELECT id FROM User WHERE username = ?";
+
+        if ($stmt = mysqli_prepare($db, $sql)) {
+
+            // Bind variables to the prepared statement as parameters
+            mysqli_stmt_bind_param($stmt, "s", $param_username);
+
+            // Set parameters
+            $param_username = trim($_POST["username"]);
+
+            // Attempt to execute the prepared statement
+            if (mysqli_stmt_execute($stmt)) {
+                /* store result */
+                mysqli_stmt_store_result($stmt);
+
+                if (mysqli_stmt_num_rows($stmt) == 1) {
+                    $username_err = "This username is already taken.";
+
+                    $message = "username taken";
+                    echo "<script type='text/javascript'>alert('$message');</script>";
+
+                } else {
+                    $username = trim($_POST["username"]);
+                }
+            } else {
+                echo "Oops! Something went wrong. Please try again.";
+            }
+        }
+
+        // Close statement
+        mysqli_stmt_close($stmt);
+    }
+
+    // Validate password
+    if (empty(trim($_POST["password"]))) {
+        $password_err = "Please enter a password.";
+    } elseif (strlen(trim($_POST["password"])) != 8) {
+        $password_err = "Password must have exactly 8 characters.";
+    } else {
+        $password = trim($_POST["password"]);
+    }
+
+    // Validate confirm password
+    if (empty(trim($_POST["confirm_password"]))) {
+        $confirm_password_err = "Please confirm password.";
+    } else {
+        $confirm_password = trim($_POST["confirm_password"]);
+        if (empty($password_err) && ($password != $confirm_password)) {
+            $confirm_password_err = "Password did not match.";
+        }
+    }
+
+    //Validate email
+    if (empty(trim($_POST["email"]))) {
+        $username_err = "Please enter your email.";
+    } else {
+        // Prepare a select statement
+        $sql = "SELECT id FROM User WHERE email = ?";
+
+        if ($stmt = mysqli_prepare($db, $sql)) {
+
+            // Bind variables to the prepared statement as parameters
+            mysqli_stmt_bind_param($stmt, "s", $param_email);
+
+            // Set parameters
+            $param_email = trim($_POST["email"]);
+
+            // Attempt to execute the prepared statement
+            if (mysqli_stmt_execute($stmt)) {
+                /* store result */
+                mysqli_stmt_store_result($stmt);
+
+                if (mysqli_stmt_num_rows($stmt) == 1) {
+                    $email_err = "This email is already in use.";
+                } else {
+                    $email = trim($_POST["email"]);
+                }
+            } else {
+                echo "Oops! Something went wrong. Please try again.";
+            }
+        }
+        // Close statement
+        mysqli_stmt_close($stmt);
+
+    }
+
+    //First and Last Name - no validation - may be null
+    $f_name = trim($_POST["f_name"]);
+    $l_name = trim($_POST["l_name"]);
+
+    //****DATABASE STUFF*****
+
+    // Check input errors before inserting in database
+    //if($username_err == ""){}
+
+    //if (!$username_err && !$password_err && !$confirm_password_err && !$email_err) {
+
+        $message = "inside if statement all valid";
+        echo "<script type='text/javascript'>alert('$message');</script>";
+
+        // Prepare an insert statement
+        $sql = "INSERT INTO User (f_name, l_name, email, username, password) VALUES ('$f_name', '$l_name', '$email','$username', '$password')";
+
+        if ($stmt = mysqli_prepare($db, $sql)) {
+
+            // Attempt to execute the prepared statement
+            if (mysqli_stmt_execute($stmt)) {
+
+                // Redirect to account page
+                header("location: RF_kitchen.php");
+
+            } else {
+                echo "Something went wrong. Please try again later.";
+            }
+
+        }
+
+    $_SESSION["username"]=$username;
+    $_SESSION["name"]=$f_name . " " . $l_name;
+    $_SESSION["email"]=$email;
+
+    // Close statement
+        mysqli_stmt_close($stmt);
+        //}
+        //$message = "skipped if";
+        //echo "<script type='text/javascript'>alert('$message');</script>";
+
+        // Close connection
+        mysqli_close($db);
+   //}
+}
+?>
+
+<!DOCTYPE html>
+
+<!-- 
+Programmer: Jenny Franklin
+Project: Fall 2018 Web Application - Recipe Finder
+        Class: CITC2375 - Internet Programming
+
+        This is my New Account page. Using template from Creative Tim that I found at
+        https://www.creative-tim.com/
+I'm adding my own images, layout, etc. But most of the items are styled by the template.
+-->
+
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="apple-touch-icon" sizes="76x76" href="./assets/img/apple-icon.png">
+  <link rel="icon" type="image/png" href="./assets/img/carrot.png">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <title>
+     Sign-up Page
+  </title>
+  <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
+  <!--     Fonts and icons     -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700,200" rel="stylesheet" />
+  <link href="https://use.fontawesome.com/releases/v5.0.6/css/all.css" rel="stylesheet">
+  <!-- CSS Files -->
+  <link href="./assets/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="./assets/css/now-ui-kit.css?v=1.2.0" rel="stylesheet" />
+    
+</head>
+
+<body class="login-page sidebar-collapse">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg bg-primary fixed-top navbar-transparent " color-on-scroll="400">
+        <div class="container">
+            <div class="navbar-translate">
+                <a class="navbar-brand" href="http://ps11.pstcc.edu/~c2375a02/RF/RF_landing.html" rel="tooltip" title="What's for Dinner?" data-placement="bottom" target="_blank">
+                    Franklin's Recipe Finder
+                </a>
+                <button class="navbar-toggler navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation" aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-bar top-bar"></span>
+                    <span class="navbar-toggler-bar middle-bar"></span>
+                    <span class="navbar-toggler-bar bottom-bar"></span>
+                </button>
+            </div>
+            <div class="collapse navbar-collapse justify-content-end" id="navigation" data-nav-image="./assets/img/blurred-image-1.jpg">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="http://ps11.pstcc.edu/~c2375a02/RF/RF_finder.html">
+                            <i class="now-ui-icons business_bulb-63"></i>
+                            <p>Find a Recipe</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-neutral" data-toggle="modal" data-target="#myModal">
+                            <i style="color:orangered" class="now-ui-icons users_single-02"></i>
+                            <p style="color:orangered">Login</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="modal" data-target="#myAboutModal">
+                            <i class="now-ui-icons travel_info"></i>
+                            <p>About</p>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- End Navbar -->
+
+    <div class="page-header clear-filter" filter-color="orange">
+        <div class="page-header-image" style="background-image:url(./assets/img/test_background_photo.jpg)"></div>
+        <div class="content">
+            <div class="container">
+                <div class="col-md-4 ml-auto mr-auto">
+                    <div class="card card-login card-plain">
+                        <form class="form" method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+                            <div class="card-header text-center">
+                                <div class="logo-container">
+                                    <img src="./assets/img/carrot.png" alt="">
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="input-group no-border input-lg">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="now-ui-icons users_circle-08"></i>
+                                        </span>
+                                    </div>
+                                    <input type="text" name ="f_name" class="form-control" placeholder="First Name..." value ="<?php echo $f_name; ?>">
+                                </div>
+                                <div class="input-group no-border input-lg">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="now-ui-icons users_circle-08"></i>
+                                        </span>
+                                    </div>
+                                    <input type="text" name ="l_name" class="form-control" placeholder="Last Name..." value ="<?php echo $l_name; ?>" />
+                                </div>
+                                <div class="input-group no-border input-lg <?php echo (!empty($username_err)) ? 'has-error' : ''; ?>">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="now-ui-icons users_single-02"></i>
+                                        </span>
+                                    </div>
+                                    <input type="text" name="username"class="form-control" placeholder="Desired Username..."  value ="<?php echo $username; ?>"/>
+                                    <span class="help-block"><?php echo $username_err; ?></span>
+                                </div>
+                                <div class="input-group no-border input-lg">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="now-ui-icons ui-1_email-85"></i>
+                                        </span>
+                                    </div>
+                                    <input type="text" name="email" class="form-control" placeholder="Email..." value ="<?php echo $email; ?>" />
+                                </div>
+                                <div class="input-group no-border input-lg">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="now-ui-icons text_caps-small"></i>
+                                        </span>
+                                    </div>
+                                    <input type="text" name="password" class="form-control" placeholder="Password (8 characters)" value ="<?php echo $password; ?>" />
+                                </div>
+                                <div class="input-group no-border input-lg">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="now-ui-icons text_caps-small"></i>
+                                        </span>
+                                    </div>
+                                    <input type="text" name="password" class="form-control" placeholder="Confirm Password..." value ="<?php echo $confirm_password; ?>" />
+                                </div>
+                                <div class="input-group no-border input-lg">
+                                    <input type="submit" class="btn btn-primary btn-round btn-lg btn-block" value="Submit">
+                                </div>
+                            </div>
+                            <div class="card-footer text-center">
+
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Start Modal -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-center">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        <i class="now-ui-icons ui-1_simple-remove"></i>
+                    </button>
+                    <h4 class="title title-up" style="color:black">Sign In</h4>
+                </div>
+                <!--MODAL BODY-->
+                <div class="modal-body">
+                    <!--INPUT FIELDS-->
+                    <div class="input-group no-border">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <i class="now-ui-icons ui-1_email-85"></i>
+                            </span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Email...">
+                    </div>
+                    <div class="input-group no-border">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <i class="now-ui-icons text_caps-small"></i>
+                            </span>
+                        </div>
+                        <input type="text" placeholder="Password..." class="form-control" />
+                    </div>
+                    <!-- CHECKBOX -->
+                    <div class="checkbox">
+                        <div class="pull-right">
+                            <h6>
+                                <a href="http://ps11.pstcc.edu/~c2375a02/RF/RF_signup.php" class="link" style="color:orangered">Create Account</a>
+                            </h6>
+                        </div>
+                        <input id="checkboxSignup" type="checkbox">
+                        <label for="checkboxSignup" style="color:black">
+                            Remember Me
+                        </label>
+                    </div>
+                </div>
+                <!--LOGIN BUTTON-->
+                <div class="modal-footer text-center">
+                    <button type="button" class="btn btn-default">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--  End Modal -->
+    <!--About Modal-->
+    <div class="modal fade" id="myAboutModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content" style="color:black">
+                <div class="modal-header justify-content-center">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        <i class="now-ui-icons ui-1_simple-remove"></i>
+                    </button>
+                    <h4 class="title title-up">About</h4>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        My name is Jenny Franklin, and this site is a semester-long project for my CITC 2375 Internet Programming Course.
+                    </p>
+                    <p>
+                        We took the project through several milestones, which you can read about on my <a href="https://blogs.pstcc.edu/jfranklin4/" target="_top">blog</a>.
+                        During this project, I was introduced to CSS, Bootstrap, Javascript, Jquery, and more! I utilized a
+                        free template for my styling, found <a href="https://www.creative-tim.com/bootstrap-themes/free" target="_top">here</a>.
+
+                    </p>
+                    <p>Enjoy!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <nav>
+                <ul>
+                    <li>
+                        <a href="http://ps11.pstcc.edu/~c2375a02/RF/RF_landing.html">
+                            Home
+                        </a>
+                    </li>
+                    <li>
+                        <a href="http://ps11.pstcc.edu/~c2375a02/RF/RF_kitchen.html">
+                            My Kitchen
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://blogs.pstcc.edu/jfranklin4/">
+                            Blog
+                        </a>
+                    </li>
+                    <li>
+                        <a data-toggle="modal" data-target="#myAboutModal">
+                            About
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </footer>
+    <!--   Core JS Files   -->
+    <script src="./assets/js/core/jquery.min.js" type="text/javascript"></script>
+    <script src="./assets/js/core/popper.min.js" type="text/javascript"></script>
+    <script src="./assets/js/core/bootstrap.min.js" type="text/javascript"></script>
+    <!--  Plugin for Switches, full documentation here: http://www.jque.re/plugins/version3/bootstrap.switch/ -->
+    <script src="./assets/js/plugins/bootstrap-switch.js"></script>
+    <!--  Plugin for the Sliders, full documentation here: http://refreshless.com/nouislider/ -->
+    <script src="./assets/js/plugins/nouislider.min.js" type="text/javascript"></script>
+    <!--  Plugin for the DatePicker, full documentation here: https://github.com/uxsolutions/bootstrap-datepicker -->
+    <script src="./assets/js/plugins/bootstrap-datepicker.js" type="text/javascript"></script>
+    <!--  Google Maps Plugin    -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE"></script>
+    <!-- Control Center for Now Ui Kit: parallax effects, scripts for the example pages etc -->
+    <script src="./assets/js/now-ui-kit.js?v=1.2.0" type="text/javascript"></script>
+</body>
+
+</html>
