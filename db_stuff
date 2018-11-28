@@ -1,0 +1,24 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Jenny Franklin
+ * Date: 11/14/2018
+ * Time: 12:22 AM
+ */
+
+    $server_type='mysql';
+    $server_name='localhost';
+
+    // username and password to log onto db server
+    $db_username='c2375a02';
+    $db_password='c2375aU!';
+    // name of database
+    $db_name='c2375a02test';
+
+    $db = mysqli_connect($server_name,$db_username,$db_password)
+        or die("Error connecting to database.");
+
+    //Connect to the database
+    mysqli_select_db($db, $db_name)
+        or die("Couldn't select the database.");
+
